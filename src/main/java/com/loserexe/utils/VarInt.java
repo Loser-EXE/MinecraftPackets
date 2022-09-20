@@ -9,7 +9,7 @@ public class VarInt {
     private static final int SEGMENT_BIT = 0x7f;
     private static final int CONTINUE_BIT = 0x80;
 
-    public static int readVarInt(DataInputStream in) {
+    public static int read(DataInputStream in) {
         int value = 0;
         int position = 0;
         byte currentByte;
@@ -31,7 +31,7 @@ public class VarInt {
         return value;
     }
 
-    public void writeVarInt(DataOutputStream out, int value) {
+    public static void write(DataOutputStream out, int value) {
         while (true) {
             if ((value & ~SEGMENT_BIT) == 0) {
                 try {
