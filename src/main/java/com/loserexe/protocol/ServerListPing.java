@@ -1,6 +1,8 @@
-package com.loserexe.packets.slp;
+package com.loserexe.protocol;
 
-import com.loserexe.packets.slp.serverbound.Handshake;
+import com.google.gson.Gson;
+import com.loserexe.packets.serverbound.Handshake;
+import com.loserexe.pojo.ServerListPingJson;
 import com.loserexe.utils.VarInt;
 
 import java.io.DataInputStream;
@@ -16,19 +18,21 @@ public class ServerListPing {
     private final int TIMEOUT = 7000;
 
     private int ping;
+    private ServerListPingJson serverListPingJson;
 
     public ServerListPing(String serverAddress, int port, int protocolVersion) throws IOException {
         this.serverAddress = serverAddress;
         this.port = port;
         this.protocolVersion = protocolVersion;
 
+        Gson gson = new Gson();
         InetSocketAddress host = new InetSocketAddress(this.serverAddress, this.port);
         Socket socket = new Socket();
         socket.connect(host, TIMEOUT);
         DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
         DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
 
-        byte[] handshakeMessage = Handshake.getHandshakePacket(this.port, this.serverAddress, this.protocolVersion);
+        byte[] handshakeMessage = Handshake.getHandshakePacket(this.port, this.serverAddress, this.protocolVersion, 1);
 
         VarInt.write(dataOutputStream, handshakeMessage.length);
         dataOutputStream.write(handshakeMessage);
@@ -68,8 +72,7 @@ public class ServerListPing {
 
         this.ping = (int) (pingTime - now); // Not very accurate
 
-        System.out.println(json);
-        System.out.println(this.ping);
+        this.serverListPingJson = gson.fromJson(json, ServerListPingJson.class);
 
         dataOutputStream.close();
         dataInputStream.close();
@@ -90,5 +93,23 @@ public class ServerListPing {
 
     public int getProtocolVersion() {
         return protocolVersion;
+    }
+
+    public void setPort(int port) {
+        this.port = port;
+    }
+
+    public ServerListPingJson getServerListPingJson() {
+        return serverListPingJson;
+    }
+
+    @Override
+    public String toString() {
+        return "ServerListPing{" +
+                "serverAddress='" + serverAddress + '\'' +
+                ", port=" + port +
+                ", protocolVersion=" + protocolVersion +
+                ", ping=" + ping +
+                '}';
     }
 }
