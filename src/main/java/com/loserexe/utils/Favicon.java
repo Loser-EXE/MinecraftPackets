@@ -22,6 +22,4 @@ public class Favicon {
         File output = new File(path);
         ImageIO.write(image, "png", output);
     }
-
-
 }
