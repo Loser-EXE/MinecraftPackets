@@ -2,7 +2,7 @@ package com.loserexe.protocol;
 
 import com.google.gson.Gson;
 import com.loserexe.packets.serverbound.Handshake;
-import com.loserexe.pojo.ServerListPingJson;
+import com.loserexe.pojo.ServerListJson;
 import com.loserexe.utils.VarInt;
 
 import java.io.DataInputStream;
@@ -11,16 +11,17 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 
-public class ServerListPing {
+public class ServerList {
     private String serverAddress;
     private int port;
     private int protocolVersion;
     private final int TIMEOUT = 7000;
 
     private int ping;
-    private ServerListPingJson serverListPingJson;
+    private ServerListJson serverListJson;
+    private String rawServerListJson;
 
-    public ServerListPing(String serverAddress, int port, int protocolVersion) throws IOException {
+    public ServerList(String serverAddress, int port, int protocolVersion) throws IOException {
         this.serverAddress = serverAddress;
         this.port = port;
         this.protocolVersion = protocolVersion;
@@ -55,6 +56,8 @@ public class ServerListPing {
         dataInputStream.readFully(input);
         String json = new String(input);
 
+        this.rawServerListJson = json;
+
         long now = System.currentTimeMillis();
 
         dataOutputStream.writeByte(0x09);
@@ -72,11 +75,12 @@ public class ServerListPing {
 
         this.ping = (int) (pingTime - now); // Not very accurate
 
-        this.serverListPingJson = gson.fromJson(json, ServerListPingJson.class);
+        this.serverListJson = gson.fromJson(json, ServerListJson.class);
 
         dataOutputStream.close();
         dataInputStream.close();
         socket.close();
+
     }
 
     public int getPing() {
@@ -99,8 +103,8 @@ public class ServerListPing {
         this.port = port;
     }
 
-    public ServerListPingJson getServerListPingJson() {
-        return serverListPingJson;
+    public ServerListJson getServerListPingJson() {
+        return serverListJson;
     }
 
     @Override

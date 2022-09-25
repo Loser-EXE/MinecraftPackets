@@ -1,21 +1,21 @@
 package com.loserexe;
 
-import com.loserexe.protocol.ServerListPing;
+import com.google.gson.Gson;
+import com.loserexe.protocol.ServerList;
 import com.loserexe.utils.Favicon;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.IOException;
-import java.util.Base64;
 
 public class ServerListPingTest {
     public static void main(String[] args) throws IOException {
-        ServerListPing serverListPing = new ServerListPing("mc.hypixel.net", 25565, -1);
+        ServerList serverList = new ServerList("play.rlcrafters.ca", 25565, -1);
 
-        System.out.println(serverListPing.getServerListPingJson().getDescription().getText());
-
-        Favicon.faviconToPng(serverListPing.getServerListPingJson().getFavicon(), "C:\\Users\\LoserEXE\\IdeaProjects\\MinecraftPackets\\favicon.png");
+        Gson gson = new Gson();
+        System.out.println(gson.toJson(serverList.getServerListPingJson()));
+        try {
+            Favicon.faviconToPng(serverList.getServerListPingJson().getFavicon(), "C:\\Users\\LoserEXE\\IdeaProjects\\MinecraftPackets\\favicon.png");
+        } catch (Exception e) {
+            throw new IOException("Error writing favicon: " + e.getMessage());
+        }
     }
 }

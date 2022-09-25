@@ -1,8 +1,8 @@
 package com.loserexe.pojo.info;
 
 public class Version {
-    private String name;
     private int protocol;
+    private String name;
 
     public String getName() {
         return name;

@@ -6,7 +6,7 @@ import com.loserexe.pojo.info.Description;
 import com.loserexe.pojo.info.Version;
 import com.loserexe.pojo.player.Players;
 
-public class ServerListPingJson {
+public class ServerListJson {
     private Version version;
     private Players players;
     @JsonAdapter(DescriptionAdapterFactory.class)

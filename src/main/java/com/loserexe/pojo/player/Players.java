@@ -5,8 +5,8 @@ import com.loserexe.pojo.player.Player;
 import java.util.List;
 
 public class Players {
-    private int max;
     private int online;
+    private int max;
     private List<Player> sample;
 
     public int getMax() {
