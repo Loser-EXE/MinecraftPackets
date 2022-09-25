@@ -4,8 +4,8 @@ import com.google.gson.Gson;
 import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import com.loserexe.pojo.info.Description;
-import com.loserexe.pojo.text.Extra;
+import com.loserexe.pojo.serverlist.info.Description;
+import com.loserexe.pojo.serverlist.text.Extra;
 
 import java.io.IOException;
 import java.util.List;
@@ -20,13 +20,15 @@ public class DescriptionAdapter extends TypeAdapter<Description> {
     @Override
     public void write(JsonWriter jsonWriter, Description description) throws IOException {
         jsonWriter.beginObject();
-        jsonWriter.name("extra");
-        jsonWriter.beginArray();
-        List<Extra> extra = description.getExtra();
-        for (int i = 0; i < extra.size(); i++) {
-            writeExtra(jsonWriter, extra.get(i));
+        if (description.getExtra() != null) {
+            jsonWriter.name("extra");
+            jsonWriter.beginArray();
+            List<Extra> extra = description.getExtra();
+            for (int i = 0; i < extra.size(); i++) {
+                writeExtra(jsonWriter, extra.get(i));
+            }
+            jsonWriter.endArray();
         }
-        jsonWriter.endArray();
         jsonWriter.name("text");
         jsonWriter.value(description.getText());
         jsonWriter.endObject();

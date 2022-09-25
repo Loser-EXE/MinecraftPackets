@@ -1,4 +1,4 @@
-package com.loserexe.pojo.info;
+package com.loserexe.pojo.serverlist.info;
 
 public class Version {
     private int protocol;

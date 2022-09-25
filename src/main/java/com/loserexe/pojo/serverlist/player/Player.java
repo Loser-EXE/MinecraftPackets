@@ -1,4 +1,4 @@
-package com.loserexe.pojo.player;
+package com.loserexe.pojo.serverlist.player;
 
 public class Player {
     private String name;

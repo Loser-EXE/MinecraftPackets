@@ -1,6 +1,4 @@
-package com.loserexe.pojo.player;
-
-import com.loserexe.pojo.player.Player;
+package com.loserexe.pojo.serverlist.player;
 
 import java.util.List;
 

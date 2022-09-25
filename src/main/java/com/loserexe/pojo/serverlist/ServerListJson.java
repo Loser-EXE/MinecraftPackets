@@ -1,10 +1,12 @@
-package com.loserexe.pojo;
+package com.loserexe.pojo.serverlist;
 
 import com.google.gson.annotations.JsonAdapter;
+import com.google.gson.annotations.SerializedName;
 import com.loserexe.adapters.DescriptionAdapterFactory;
-import com.loserexe.pojo.info.Description;
-import com.loserexe.pojo.info.Version;
-import com.loserexe.pojo.player.Players;
+import com.loserexe.pojo.serverlist.info.Description;
+import com.loserexe.pojo.serverlist.info.ModInfo;
+import com.loserexe.pojo.serverlist.info.Version;
+import com.loserexe.pojo.serverlist.player.Players;
 
 public class ServerListJson {
     private Version version;
@@ -12,6 +14,8 @@ public class ServerListJson {
     @JsonAdapter(DescriptionAdapterFactory.class)
     private Description description;
     private String favicon;
+    @SerializedName("modinfo")
+    private ModInfo modInfo;
     private boolean previewsChat;
     private boolean enforcesSecureChat;
 
@@ -39,6 +43,10 @@ public class ServerListJson {
         return enforcesSecureChat;
     }
 
+    public ModInfo getModInfo() {
+        return modInfo;
+    }
+
     @Override
     public String toString() {
         return "ServerListPingJson{" +
@@ -46,6 +54,7 @@ public class ServerListJson {
                 ", players=" + players +
                 ", description=" + description +
                 ", favicon='" + favicon + '\'' +
+                ", modinfo='" + modInfo + "\'" +
                 ", previewsChat=" + previewsChat +
                 ", enforcesSecureChat=" + enforcesSecureChat +
                 '}';

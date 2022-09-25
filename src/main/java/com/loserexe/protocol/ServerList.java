@@ -2,7 +2,7 @@ package com.loserexe.protocol;
 
 import com.google.gson.Gson;
 import com.loserexe.packets.serverbound.Handshake;
-import com.loserexe.pojo.ServerListJson;
+import com.loserexe.pojo.serverlist.ServerListJson;
 import com.loserexe.utils.VarInt;
 
 import java.io.DataInputStream;
@@ -99,13 +99,11 @@ public class ServerList {
         return protocolVersion;
     }
 
-    public void setPort(int port) {
-        this.port = port;
-    }
-
-    public ServerListJson getServerListPingJson() {
+    public ServerListJson getServerListJson() {
         return serverListJson;
     }
+
+    public String getRawServerListJson() { return rawServerListJson; }
 
     @Override
     public String toString() {
