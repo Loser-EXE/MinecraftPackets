@@ -1,4 +1,4 @@
-package com.loserexe.adapters;
+package com.loserexe.adapters.adapter;
 
 import com.google.gson.Gson;
 import com.google.gson.TypeAdapter;
