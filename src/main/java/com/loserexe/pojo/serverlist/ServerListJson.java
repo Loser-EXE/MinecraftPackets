@@ -2,7 +2,7 @@ package com.loserexe.pojo.serverlist;
 
 import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.annotations.SerializedName;
-import com.loserexe.adapters.DescriptionAdapterFactory;
+import com.loserexe.adapters.factory.DescriptionAdapterFactory;
 import com.loserexe.pojo.serverlist.info.Description;
 import com.loserexe.pojo.serverlist.info.ModInfo;
 import com.loserexe.pojo.serverlist.info.Version;

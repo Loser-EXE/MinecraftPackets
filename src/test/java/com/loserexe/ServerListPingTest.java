@@ -10,7 +10,7 @@ import java.util.List;
 
 public class ServerListPingTest {
     public static void main(String[] args) throws IOException {
-        ServerList serverList = new ServerList("mc.hypixel.net", 25565, -1);
+        ServerList serverList = new ServerList("mc.loserexe.com", 25565, -1);
 
         Gson gson = new Gson();
         System.out.println(gson.toJson(serverList.getServerListJson()));

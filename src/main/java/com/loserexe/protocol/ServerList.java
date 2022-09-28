@@ -33,7 +33,11 @@ public class ServerList {
         DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
         DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
 
-        byte[] handshakeMessage = Handshake.getHandshakePacket(this.port, this.serverAddress, this.protocolVersion, 1);
+        byte[] handshakeMessage = Handshake.getHandshakePacket(
+                this.port,
+                this.serverAddress,
+                this.protocolVersion,
+                1);
 
         VarInt.write(dataOutputStream, handshakeMessage.length);
         dataOutputStream.write(handshakeMessage);
