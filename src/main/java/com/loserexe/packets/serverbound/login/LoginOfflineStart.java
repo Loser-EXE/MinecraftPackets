@@ -10,8 +10,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 public class LoginOfflineStart {
-    private String name;
-
     private static final int PACKET_ID = 0x00;
 
     public static byte[] getLoginStartPacket(String name) throws IOException {

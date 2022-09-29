@@ -1,6 +1,7 @@
 package com.loserexe.protocol;
 
 import com.google.gson.Gson;
+import com.loserexe.Server;
 import com.loserexe.packets.serverbound.Handshake;
 import com.loserexe.pojo.serverlist.ServerListJson;
 import com.loserexe.utils.VarInt;
@@ -8,114 +9,82 @@ import com.loserexe.utils.VarInt;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.Socket;
 
 public class ServerList {
-    private String serverAddress;
-    private int port;
-    private int protocolVersion;
-    private final int TIMEOUT = 7000;
-
     private int ping;
     private ServerListJson serverListJson;
     private String rawServerListJson;
 
-    public ServerList(String serverAddress, int port, int protocolVersion) throws IOException {
-        this.serverAddress = serverAddress;
-        this.port = port;
-        this.protocolVersion = protocolVersion;
-
+    public ServerList (Server server) throws IOException {
+        DataInputStream dataInputStream = server.getInputStream();
+        DataOutputStream dataOutputStream = server.getOutputStream();
         Gson gson = new Gson();
-        InetSocketAddress host = new InetSocketAddress(this.serverAddress, this.port);
-        Socket socket = new Socket();
-        socket.connect(host, TIMEOUT);
-        DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
-        DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
 
-        byte[] handshakeMessage = Handshake.getHandshakePacket(
-                this.port,
-                this.serverAddress,
-                this.protocolVersion,
+        try {
+            byte[] handshakeMessage = Handshake.getHandshakePacket(
+                server.getPort(),
+                server.getServerAddress(),
+                server.getProtocolVersion(),
                 1);
 
-        VarInt.write(dataOutputStream, handshakeMessage.length);
-        dataOutputStream.write(handshakeMessage);
+            VarInt.write(dataOutputStream, handshakeMessage.length);
+            dataOutputStream.write(handshakeMessage);
 
-        dataOutputStream.writeByte(0x01); // Status Request
-        dataOutputStream.writeByte(0x00); // Ping Request
+            dataOutputStream.writeByte(0x01); // Status Request
+            dataOutputStream.writeByte(0x00); // Ping Request
 
-        VarInt.read(dataInputStream);
-        int id = VarInt.read(dataInputStream);
+            VarInt.read(dataInputStream);
 
-        if (id == -1) throw new IOException("Premature end of stream.");
-        if (id != 0x00) throw new IOException("Invalid PacketID.");
+            int id = VarInt.read(dataInputStream);
 
-        int length = VarInt.read(dataInputStream);
+            if (id == -1) throw new IOException("Premature end of stream.");
+            if (id != 0x00) throw new IOException("Invalid PacketID.");
 
-        if (length == -1) throw new IOException("Premature end of stream.");
-        if (length == 0) throw new IOException("Invalid string length"); //That's what she said
+            int length = VarInt.read(dataInputStream);
 
-        byte[] input = new byte[length];
-        dataInputStream.readFully(input);
-        String json = new String(input);
+            if (length == -1) throw new IOException("Premature end of stream.");
+            if (length == 0) throw new IOException("Invalid string length"); //That's what she said
 
-        this.rawServerListJson = json;
+            byte[] input = new byte[length];
+            dataInputStream.readFully(input);
+            String json = new String(input);
 
-        long now = System.currentTimeMillis();
+            this.rawServerListJson = json;
 
-        dataOutputStream.writeByte(0x09);
-        dataOutputStream.writeByte(0x01);
-        dataOutputStream.writeLong(now); // Ping
+            long now = System.currentTimeMillis();
 
-        VarInt.read(dataInputStream);
-        id = VarInt.read(dataInputStream);
+            dataOutputStream.writeByte(0x09);
+            dataOutputStream.writeByte(0x01);
+            dataOutputStream.writeLong(now); // Ping
 
-        if (id == -1) throw new IOException("Premature end of stream.");
-        if (id != 0x01) throw new IOException("Invalid PacketID.");
+            VarInt.read(dataInputStream);
+            id = VarInt.read(dataInputStream);
 
-        dataInputStream.readLong(); // Pong
-        long pingTime = System.currentTimeMillis();
+            if (id == -1) throw new IOException("Premature end of stream.");
+            if (id != 0x01) throw new IOException("Invalid PacketID.");
 
-        this.ping = (int) (pingTime - now); // Not very accurate
+            dataInputStream.readLong(); // Pong
+            long pingTime = System.currentTimeMillis();
 
-        this.serverListJson = gson.fromJson(json, ServerListJson.class);
+            this.ping = (int) (pingTime - now); // Not very accurate
 
-        dataOutputStream.close();
-        dataInputStream.close();
-        socket.close();
-
+            this.serverListJson = gson.fromJson(json, ServerListJson.class);
+            
+        } catch (Exception e) {
+            server.closeConnection();
+            throw new IOException(e.getMessage());
+        }
     }
 
     public int getPing() {
         return this.ping;
     }
 
-    public String getServerAddress() {
-        return serverAddress;
-    }
-
-    public int getPort() {
-        return port;
-    }
-
-    public int getProtocolVersion() {
-        return protocolVersion;
-    }
-
     public ServerListJson getServerListJson() {
         return serverListJson;
     }
 
-    public String getRawServerListJson() { return rawServerListJson; }
-
-    @Override
-    public String toString() {
-        return "ServerListPing{" +
-                "serverAddress='" + serverAddress + '\'' +
-                ", port=" + port +
-                ", protocolVersion=" + protocolVersion +
-                ", ping=" + ping +
-                '}';
+    public String getRawServerListJson() {
+        return rawServerListJson; 
     }
 }
