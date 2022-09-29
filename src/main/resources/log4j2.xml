@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{HH:mm:ss.sss} [%t] %-5level %logger{36} - %msg%n"/>
+        </Console>
+    </Appenders>
+    <Loggers>
+        <Logger name="com.loserexe.Server" level="info"/>
+        <Logger name="com.loserexe.packets.serverbound.Handshake" level="info"/>
+        <Logger name="com.loserexe.packets.serverbound.login.LoginOfflineStart" level="info"/>
+        <Logger name="com.loserexe.protocol.ServerList" level="info"/>
+        <Logger name="com.loserexe.protocol.LoginOffline" level="info"/>
+        <Root level="info">
+            <AppenderRef ref="Console"/>
+        </Root>
+    </Loggers>
+</Configuration>

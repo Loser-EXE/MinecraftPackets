@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 
 public class ServerTest {
     private Server server;
-
+    
     @BeforeEach
     public void connectToServer() throws IOException{
         this.server = new Server("mc.loserexe.com", "Bruh", 760, 25565);
@@ -17,7 +17,6 @@ public class ServerTest {
     @Test
     public void getServerList() throws IOException {
         this.server.serverListPing(760);
-        System.out.println(this.server.getServerList().getRawServerListJson());
     }
 
     @Test
