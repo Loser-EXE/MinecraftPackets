@@ -1,4 +1,4 @@
-package com.loserexe.pojo.serverlist.info;
+package com.loserexe.pojo.serverlist.handshake.info;
 
 public class Version {
     private int protocol;

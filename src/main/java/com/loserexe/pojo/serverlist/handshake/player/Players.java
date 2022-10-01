@@ -1,4 +1,4 @@
-package com.loserexe.pojo.serverlist.player;
+package com.loserexe.pojo.serverlist.handshake.player;
 
 import java.util.List;
 

@@ -1,6 +1,6 @@
-package com.loserexe.pojo.serverlist.info;
+package com.loserexe.pojo.serverlist.handshake.info;
 
-import com.loserexe.pojo.serverlist.text.Extra;
+import com.loserexe.pojo.serverlist.handshake.text.Extra;
 
 import java.util.List;
 

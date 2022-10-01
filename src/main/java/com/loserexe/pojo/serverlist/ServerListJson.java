@@ -3,10 +3,10 @@ package com.loserexe.pojo.serverlist;
 import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.annotations.SerializedName;
 import com.loserexe.adapters.factory.DescriptionAdapterFactory;
-import com.loserexe.pojo.serverlist.info.Description;
-import com.loserexe.pojo.serverlist.info.ModInfo;
-import com.loserexe.pojo.serverlist.info.Version;
-import com.loserexe.pojo.serverlist.player.Players;
+import com.loserexe.pojo.serverlist.handshake.info.Description;
+import com.loserexe.pojo.serverlist.handshake.info.ModInfo;
+import com.loserexe.pojo.serverlist.handshake.info.Version;
+import com.loserexe.pojo.serverlist.handshake.player.Players;
 
 public class ServerListJson {
     private Version version;

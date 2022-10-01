@@ -1,4 +1,4 @@
-package com.loserexe.pojo.serverlist.text;
+package com.loserexe.pojo.serverlist.handshake.text;
 
 import com.google.gson.annotations.SerializedName;
 

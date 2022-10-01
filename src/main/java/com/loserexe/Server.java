@@ -71,6 +71,7 @@ public class Server {
             this.dataOutputStream.close();
             this.dataInputStream.close();
             this.socket.close();
+            logger.info("Closed connection to server " + this.serverAddress);
         } catch(Exception e) {
             logger.error("Cant close connection to server: " + e.getMessage(), e);
         }

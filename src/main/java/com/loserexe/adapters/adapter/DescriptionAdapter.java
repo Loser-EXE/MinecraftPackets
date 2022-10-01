@@ -4,8 +4,8 @@ import com.google.gson.Gson;
 import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import com.loserexe.pojo.serverlist.info.Description;
-import com.loserexe.pojo.serverlist.text.Extra;
+import com.loserexe.pojo.serverlist.handshake.info.Description;
+import com.loserexe.pojo.serverlist.handshake.text.Extra;
 
 import java.io.IOException;
 import java.util.List;
