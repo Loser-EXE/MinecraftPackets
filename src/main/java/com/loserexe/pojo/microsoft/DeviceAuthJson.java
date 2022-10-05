@@ -8,9 +8,9 @@ public class DeviceAuthJson {
     @SerializedName("device_code")
     private String deviceCode;
     @SerializedName("verification_uri")
-    private String verificationURI;
+    private String verificationUri;
     @SerializedName("expires_in")
-    private int expiresIn;
+    private int exipresIn;
     private int interval;
     private String message;
 
@@ -22,12 +22,12 @@ public class DeviceAuthJson {
         return this.deviceCode;
     }
 
-    public String getVerificationURI() {
-        return this.verificationURI;
+    public String getVerificationUri() {
+        return this.verificationUri;
     }
 
-    public int getExpiresIn() {
-        return this.expiresIn;
+    public int expiresIn() {
+        return this.exipresIn;
     }
 
     public int getInterval() {
