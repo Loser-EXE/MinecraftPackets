@@ -2,14 +2,14 @@ package com.loserexe;
 
 import java.io.IOException;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 public class ServerTest {
     private Server server;
     
-    @BeforeEach
+    @Before
     public void connectToServer() throws IOException{
         this.server = new Server("mc.loserexe.com", "Bruh", 760, 25565);
     }
@@ -25,8 +25,8 @@ public class ServerTest {
         this.server.getInputStream().read();
     }
 
-    @AfterEach
-    void closeConnection() throws IOException{
+    @After
+    public void closeConnection() throws IOException{
         this.server.closeConnection();
     }
 }
