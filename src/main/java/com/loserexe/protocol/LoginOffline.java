@@ -25,14 +25,14 @@ public class LoginOffline {
                 2);
 
         VarInt.write(dataOutputStream, handshakeMessage.length);
-        logger.info("Wrote to dataOutputStream: handshakeMessage.length = " + handshakeMessage.length);
+        logger.debug("Wrote to dataOutputStream: handshakeMessage.length = " + handshakeMessage.length);
         dataOutputStream.write(handshakeMessage);
         logger.info("Sent handshakeMessage packet");
 
         logger.info("Creating LoginOffline packet...");
         byte[] login = LoginOfflineStart.getLoginStartPacket(server.getUsername());
         VarInt.write(dataOutputStream, login.length);
-        logger.info("Wrote to dataOutputStream: LoginOffline.length = " + login.length);
+        logger.debug("Wrote to dataOutputStream: LoginOffline.length = " + login.length);
         dataOutputStream.write(login);
         logger.info("Sent LoginOffline packet");
     }

@@ -18,17 +18,17 @@ public class Handshake {
         DataOutputStream handshake = new DataOutputStream(buffer);
 
         handshake.writeByte(PACKET_ID);
-        logger.info("Wrote to packet: ID = " + PACKET_ID);
+        logger.debug("Wrote to packet: ID = " + PACKET_ID);
         VarInt.write(handshake, protocolVersion);
-        logger.info("Wrote to packet: ProtocolVersion = " + protocolVersion);
+        logger.debug("Wrote to packet: ProtocolVersion = " + protocolVersion);
         VarInt.write(handshake, serverAddress.length());
-        logger.info("Wrote to packet: ServerAddressLength = " + serverAddress.length());
+        logger.debug("Wrote to packet: ServerAddressLength = " + serverAddress.length());
         handshake.writeBytes(serverAddress);
-        logger.info("Wrote to packet: serverAddress = " + serverAddress);
+        logger.debug("Wrote to packet: serverAddress = " + serverAddress);
         handshake.writeShort((short) serverPort);
-        logger.info("Wrote to packet: serverPort = " + serverPort);
+        logger.debug("Wrote to packet: serverPort = " + serverPort);
         VarInt.write(handshake, nextState);
-        logger.info("Wrote to packet: nextState = " + nextState);
+        logger.debug("Wrote to packet: nextState = " + nextState);
 
         return buffer.toByteArray();
     }

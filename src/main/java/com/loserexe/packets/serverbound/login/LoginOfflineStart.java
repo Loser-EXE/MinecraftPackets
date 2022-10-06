@@ -21,20 +21,20 @@ public class LoginOfflineStart {
         DataOutputStream loginStart = new DataOutputStream(buffer);
 
         UUID uuid = UUID.nameUUIDFromBytes(name.getBytes(StandardCharsets.UTF_8));
-        logger.info("Gennerated uuid from " + name + ": " + uuid);
+        logger.debug("Gennerated uuid from " + name + ": " + uuid);
 
         loginStart.writeByte(PACKET_ID);
-        logger.info("Wrote to packet: ID = " + PACKET_ID);
+        logger.debug("Wrote to packet: ID = " + PACKET_ID);
         VarInt.write(loginStart, name.length());
-        logger.info("Wrote to packet: nameLength = " + name.length());
+        logger.debug("Wrote to packet: nameLength = " + name.length());
         loginStart.writeBytes(name);
-        logger.info("Wrote to packet: name = " + name);
+        logger.debug("Wrote to packet: name = " + name);
         loginStart.writeBoolean(false);
-        logger.info("Wrote to packet: HasSigData = " + false);
+        logger.debug("Wrote to packet: HasSigData = " + false);
         loginStart.writeBoolean(true);
-        logger.info("Wrote to packet: HasUUID = " + true);
+        logger.debug("Wrote to packet: HasUUID = " + true);
         MinecraftUUID.writeBytes(loginStart, uuid);
-        logger.info("Wrote to packet: UUID = " + uuid);
+        logger.debug("Wrote to packet: UUID = " + uuid);
 
         return buffer.toByteArray();
     }

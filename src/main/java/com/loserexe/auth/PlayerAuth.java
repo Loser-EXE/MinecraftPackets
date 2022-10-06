@@ -77,7 +77,7 @@ public class PlayerAuth {
     }
 
     private void authDevice() throws IOException{
-        logger.info("Started Device authorization request");
+        logger.debug("Started Device authorization request");
         HttpPost httpPost = new HttpPost(DEVICE_AUTH_REQUEST_URL);
         httpPost.setHeader(applicationUrlencodedHeader);
 
@@ -127,6 +127,7 @@ public class PlayerAuth {
     private void authXBL() throws IOException, InterruptedException{
         authUser();
 
+        logger.info("Authenticating with XBL");
         HttpPost httpPost = new HttpPost(XBL_AUTH_URL);
         httpPost.setHeaders(contentAndAcceptJson);
 
@@ -142,6 +143,7 @@ public class PlayerAuth {
     private void authXSTS() throws IOException, InterruptedException{
         authXBL();
 
+        logger.info("Authenticating with XSTS");
         HttpPost httpPost = new HttpPost(XSTS_AUTH_URL);
         httpPost.setHeaders(contentAndAcceptJson);
 
