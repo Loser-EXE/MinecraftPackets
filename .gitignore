@@ -41,3 +41,4 @@ build/
 
 favicon.png
 src/test/java/com/loserexe/VarInt.java
+/.vscode/

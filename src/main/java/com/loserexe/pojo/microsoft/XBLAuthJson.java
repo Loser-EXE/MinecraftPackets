@@ -6,7 +6,7 @@ public class XBLAuthJson {
     @SerializedName("Properties")
     private Properties properties;
     @SerializedName("RelyingParty")
-    private String relyingParty = "http://auth.xboxlive.com";
+    private String relyingParty;
     @SerializedName("TokenType")
     private String tokenType = "JWT";
 
@@ -19,8 +19,14 @@ public class XBLAuthJson {
     @SerializedName("DisplayClaims")
     private DisplayClaims displayClaims;
 
-    public XBLAuthJson(String accessToken) {
-        this.properties = new Properties(accessToken);
+    public XBLAuthJson(String accessToken, String service) {
+        this.properties = new Properties(accessToken, service);
+
+        if (service.equals("AuthXBL")) {
+            this.relyingParty = "http://auth.xboxlive.com";
+        } else {
+            this.relyingParty = "rp://api.minecraftservices.com/";
+        }
     }
 
     public String getIssueInstant() {

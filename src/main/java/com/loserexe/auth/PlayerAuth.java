@@ -32,12 +32,14 @@ public class PlayerAuth {
     private final String DEVICE_AUTH_REQUEST_URL = BASE_MICROSOFT_AUTH_URL+"devicecode";
     private final String MICROSOFT_USER_AUTH_URL = BASE_MICROSOFT_AUTH_URL+"token";
     private final String XBL_AUTH_URL = "https://user.auth.xboxlive.com/user/authenticate";
+    private final String XSTS_AUTH_URL = "https://xsts.auth.xboxlive.com/xsts/authorize";
     private final String SCOPE = "Xboxlive.signin XboxLive.offline_access";
     private final String GRANT_TYPE = "urn:ietf:params:oauth:grant-type:device_code";
     private final String APPLICATION_JSON = "application/json";
     private final Header applicationUrlencodedHeader = new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded");
     private final Header contentTypeJson = new BasicHeader(HttpHeaders.CONTENT_TYPE, APPLICATION_JSON);
     private final Header acceptJson = new BasicHeader(HttpHeaders.ACCEPT, APPLICATION_JSON);
+    private final Header[] contentAndAcceptJson = new Header[2];
     private final CloseableHttpClient httpClient = HttpClients.createDefault();
     private final Gson gson = new GsonBuilder().disableHtmlEscaping().create();
     private final Logger logger = LogManager.getLogger(this.getClass().getName());
@@ -47,16 +49,31 @@ public class PlayerAuth {
     private String accessToken;
 
     private String XBLToken;
-    private String UserHash;
+    private String XSTSToken;
 
     public PlayerAuth(String accessToken) throws IOException, InterruptedException{
+        contentAndAcceptJson[0] = contentTypeJson;
+        contentAndAcceptJson[1] = acceptJson;
+
         this.accessToken = accessToken;
 
         authXBL();
     }
 
     public PlayerAuth() throws IOException, InterruptedException{
-        authXBL();
+        contentAndAcceptJson[0] = contentTypeJson;
+        contentAndAcceptJson[1] = acceptJson;
+
+        authXSTS();
+    }
+
+    private <T> T parseJsonResponse(HttpPost httpPost, Class<T> clazz) throws IOException{
+        try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
+            byte[] responseBytes = response.getEntity().getContent().readAllBytes();
+            logger.info("Got Response: " + new String(responseBytes));
+            T responseJson = gson.fromJson(new String(responseBytes), clazz);
+            return responseJson;
+        }
     }
 
     private void authDevice() throws IOException{
@@ -69,17 +86,17 @@ public class PlayerAuth {
         params.add(new BasicNameValuePair("scope", SCOPE));
         httpPost.setEntity(new UrlEncodedFormEntity(params));
 
-        try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
-            byte[] responseBytes = response.getEntity().getContent().readAllBytes();
-            DeviceAuthJson responseJson = gson.fromJson(new String(responseBytes), DeviceAuthJson.class);
-            DEVICE_CODE = responseJson.getDeviceCode();
-            interval = responseJson.getInterval();
-            System.out.println(responseJson.getMessage());
-        }
+        DeviceAuthJson responseJson = parseJsonResponse(httpPost, DeviceAuthJson.class);
+
+        DEVICE_CODE = responseJson.getDeviceCode();
+        interval = responseJson.getInterval();
+
+        System.out.println(responseJson.getMessage());
     }
 
     private void authUser() throws IOException, InterruptedException{
         authDevice();
+
         logger.info("Authenticating user");
         HttpPost httpPost = new HttpPost(MICROSOFT_USER_AUTH_URL);
         httpPost.setHeader(applicationUrlencodedHeader);
@@ -91,43 +108,49 @@ public class PlayerAuth {
         httpPost.setEntity(new UrlEncodedFormEntity(params));
 
         while (true) {
-            try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
-                byte[] responseBytes = response.getEntity().getContent().readAllBytes();
-                UserAuthJson responseJson = gson.fromJson(new String(responseBytes), UserAuthJson.class);
+            UserAuthJson responseJson = parseJsonResponse(httpPost, UserAuthJson.class);
 
-                if (responseJson.getError() != null && !responseJson.getError().equals("authorization_pending")) {
-                    logger.error(responseJson.getError()+ ": " + responseJson.getErrorDescription());
-                    throw new IOException((responseJson.getError()+ ": " + responseJson.getErrorDescription()));
-                }
-
-                if (responseJson.getAccessToken() != null) {
-                    this.accessToken = responseJson.getAccessToken();
-                    break;
-                }
+            if (responseJson.getError() != null && !responseJson.getError().equals("authorization_pending")) {
+                logger.error(responseJson.getError()+ ": " + responseJson.getErrorDescription());
+                throw new IOException((responseJson.getError()+ ": " + responseJson.getErrorDescription()));
             }
+
+            if (responseJson.getAccessToken() != null) {
+                this.accessToken = responseJson.getAccessToken();
+                break;
+            }
+
             Thread.sleep(interval * 1000);
         }
     }
 
     private void authXBL() throws IOException, InterruptedException{
-        if (accessToken == null) authUser();
-
-        Header[] headers = new Header[2];
-        headers[0] = contentTypeJson;
-        headers[1] = acceptJson;
+        authUser();
 
         HttpPost httpPost = new HttpPost(XBL_AUTH_URL);
-        httpPost.setHeaders(headers);
+        httpPost.setHeaders(contentAndAcceptJson);
 
-        String json = gson.toJson(new XBLAuthJson(this.accessToken));
+        String json = gson.toJson(new XBLAuthJson(this.accessToken, "AuthXBL"));
         StringEntity stringEntity = new StringEntity(json, ContentType.APPLICATION_JSON);
         httpPost.setEntity(stringEntity);
 
-        try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
-            byte[] responseBytes = response.getEntity().getContent().readAllBytes();
-            XBLAuthJson responseJson = gson.fromJson(new String(responseBytes), XBLAuthJson.class);
-            this.XBLToken = responseJson.getToken();
-            this.UserHash = responseJson.getDisplayClaims().getXui()[0].getUserHash();
-        }
+        XBLAuthJson responseJson = parseJsonResponse(httpPost, XBLAuthJson.class);
+
+        this.XBLToken = responseJson.getToken();
+    }
+
+    private void authXSTS() throws IOException, InterruptedException{
+        authXBL();
+
+        HttpPost httpPost = new HttpPost(XSTS_AUTH_URL);
+        httpPost.setHeaders(contentAndAcceptJson);
+
+        String json = gson.toJson(new XBLAuthJson(XBLToken, "AuthXSTS"));
+        StringEntity stringEntity = new StringEntity(json, ContentType.APPLICATION_JSON);
+        httpPost.setEntity(stringEntity);
+        // This endpoint can respond with a error im just gonna ignore that till its a problem :)
+        XBLAuthJson responseJson = parseJsonResponse(httpPost, XBLAuthJson.class);
+
+        this.XSTSToken = responseJson.getToken();
     }
 }
