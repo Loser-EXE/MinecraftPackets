@@ -10,7 +10,6 @@ public class PlayerAuthTest {
 
     @Test
     public void playerAuth() throws IOException, InterruptedException{
-        System.out.println("Hello");
         new PlayerAuth();
     }
 }

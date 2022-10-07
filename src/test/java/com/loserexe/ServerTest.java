@@ -11,7 +11,7 @@ public class ServerTest {
     
     @Before
     public void connectToServer() throws IOException{
-        this.server = new Server("mc.loserexe.com", "Bruh", 760, 25565);
+        this.server = new Server("mc.loserexe.com", "AMongus", 760, 25565);
     }
 
     @Test

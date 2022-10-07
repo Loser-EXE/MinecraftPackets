@@ -8,6 +8,7 @@ import org.apache.http.HttpHeaders;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
@@ -23,6 +24,8 @@ import com.google.gson.GsonBuilder;
 import com.loserexe.pojo.microsoft.DeviceAuthJson;
 import com.loserexe.pojo.microsoft.UserAuthJson;
 import com.loserexe.pojo.microsoft.XBLAuthJson;
+import com.loserexe.pojo.minecraft.AuthMinecraft;
+import com.loserexe.pojo.minecraft.PlayerProfileJson;
 
 public class PlayerAuth {
     private final String TENANT = "consumers";
@@ -33,126 +36,143 @@ public class PlayerAuth {
     private final String MICROSOFT_USER_AUTH_URL = BASE_MICROSOFT_AUTH_URL+"token";
     private final String XBL_AUTH_URL = "https://user.auth.xboxlive.com/user/authenticate";
     private final String XSTS_AUTH_URL = "https://xsts.auth.xboxlive.com/xsts/authorize";
+	private final String AUTH_MINE_URL = "https://api.minecraftservices.com/authentication/login_with_xbox";
+    private final String GET_MINE_PROFILE = "https://api.minecraftservices.com/minecraft/profile";
     private final String SCOPE = "Xboxlive.signin XboxLive.offline_access";
     private final String GRANT_TYPE = "urn:ietf:params:oauth:grant-type:device_code";
     private final String APPLICATION_JSON = "application/json";
     private final Header applicationUrlencodedHeader = new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded");
     private final Header contentTypeJson = new BasicHeader(HttpHeaders.CONTENT_TYPE, APPLICATION_JSON);
     private final Header acceptJson = new BasicHeader(HttpHeaders.ACCEPT, APPLICATION_JSON);
+    private Header mineAuthHeader;
     private final Header[] contentAndAcceptJson = new Header[2];
     private final CloseableHttpClient httpClient = HttpClients.createDefault();
     private final Gson gson = new GsonBuilder().disableHtmlEscaping().create();
     private final Logger logger = LogManager.getLogger(this.getClass().getName());
 
-    private int interval;
-    private String DEVICE_CODE;
-    private String accessToken;
-
-    private String XBLToken;
-    private String XSTSToken;
-
-    public PlayerAuth(String accessToken) throws IOException, InterruptedException{
-        contentAndAcceptJson[0] = contentTypeJson;
-        contentAndAcceptJson[1] = acceptJson;
-
-        this.accessToken = accessToken;
-
-        authXBL();
-    }
+    private String MineAccessToken;
 
     public PlayerAuth() throws IOException, InterruptedException{
-        contentAndAcceptJson[0] = contentTypeJson;
-        contentAndAcceptJson[1] = acceptJson;
+        String accessToken = authMicrosoftAccount();
+        String[] XBLAuth = authXBL(accessToken);
 
-        authXSTS();
+        getMinecraftProfile(XBLAuth);
+
     }
 
     private <T> T parseJsonResponse(HttpPost httpPost, Class<T> clazz) throws IOException{
         try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
             byte[] responseBytes = response.getEntity().getContent().readAllBytes();
-            logger.info("Got Response: " + new String(responseBytes));
+            logger.debug("Got Response: " + new String(responseBytes));
             T responseJson = gson.fromJson(new String(responseBytes), clazz);
             return responseJson;
         }
     }
 
-    private void authDevice() throws IOException{
-        logger.debug("Started Device authorization request");
-        HttpPost httpPost = new HttpPost(DEVICE_AUTH_REQUEST_URL);
-        httpPost.setHeader(applicationUrlencodedHeader);
 
-        ArrayList<NameValuePair> params = new ArrayList<>();
-        params.add(new BasicNameValuePair("client_id", CLIENT_ID));
-        params.add(new BasicNameValuePair("scope", SCOPE));
-        httpPost.setEntity(new UrlEncodedFormEntity(params));
-
-        DeviceAuthJson responseJson = parseJsonResponse(httpPost, DeviceAuthJson.class);
-
-        DEVICE_CODE = responseJson.getDeviceCode();
-        interval = responseJson.getInterval();
-
-        System.out.println(responseJson.getMessage());
+    private <T> T parseJsonResponseGet(HttpGet httpGet, Class<T> clazz) throws IOException{
+        try (CloseableHttpResponse response = httpClient.execute(httpGet)) {
+            byte[] responseBytes = response.getEntity().getContent().readAllBytes();
+            logger.debug("Got Response: " + new String(responseBytes));
+            T responseJson = gson.fromJson(new String(responseBytes), clazz);
+            return responseJson;
+        }
     }
 
-    private void authUser() throws IOException, InterruptedException{
-        authDevice();
+    private String authMicrosoftAccount() throws IOException, InterruptedException{
+        logger.debug("Started Device authorization request");
+        HttpPost deviceAuthPost = new HttpPost(DEVICE_AUTH_REQUEST_URL);
+        deviceAuthPost.setHeader(applicationUrlencodedHeader);
+
+        ArrayList<NameValuePair> deviceAuthParams = new ArrayList<>();
+        deviceAuthParams.add(new BasicNameValuePair("client_id", CLIENT_ID));
+        deviceAuthParams.add(new BasicNameValuePair("scope", SCOPE));
+        deviceAuthPost.setEntity(new UrlEncodedFormEntity(deviceAuthParams));
+
+        DeviceAuthJson deviceAuthJson = parseJsonResponse(deviceAuthPost, DeviceAuthJson.class);
+
+        String deviceCode = deviceAuthJson.getDeviceCode();
+        int interval = deviceAuthJson.getInterval();
+
+        System.out.println(deviceAuthJson.getMessage());
 
         logger.info("Authenticating user");
-        HttpPost httpPost = new HttpPost(MICROSOFT_USER_AUTH_URL);
-        httpPost.setHeader(applicationUrlencodedHeader);
+        HttpPost authUserPost = new HttpPost(MICROSOFT_USER_AUTH_URL);
+        authUserPost.setHeader(applicationUrlencodedHeader);
 
-        ArrayList<NameValuePair> params = new ArrayList<>();
-        params.add(new BasicNameValuePair("grant_type", GRANT_TYPE));
-        params.add(new BasicNameValuePair("client_id", CLIENT_ID));
-        params.add(new BasicNameValuePair("device_code", DEVICE_CODE));
-        httpPost.setEntity(new UrlEncodedFormEntity(params));
+        ArrayList<NameValuePair> authUserParams = new ArrayList<>();
+        authUserParams.add(new BasicNameValuePair("grant_type", GRANT_TYPE));
+        authUserParams.add(new BasicNameValuePair("client_id", CLIENT_ID));
+        authUserParams.add(new BasicNameValuePair("device_code", deviceCode));
+        authUserPost.setEntity(new UrlEncodedFormEntity(authUserParams));
 
         while (true) {
-            UserAuthJson responseJson = parseJsonResponse(httpPost, UserAuthJson.class);
+            UserAuthJson authJson = parseJsonResponse(authUserPost, UserAuthJson.class);
 
-            if (responseJson.getError() != null && !responseJson.getError().equals("authorization_pending")) {
-                logger.error(responseJson.getError()+ ": " + responseJson.getErrorDescription());
-                throw new IOException((responseJson.getError()+ ": " + responseJson.getErrorDescription()));
+            if (authJson.getError() != null && !authJson.getError().equals("authorization_pending")) {
+                logger.error(authJson.getError()+ ": " + authJson.getErrorDescription());
+                throw new IOException((authJson.getError()+ ": " + authJson.getErrorDescription()));
             }
 
-            if (responseJson.getAccessToken() != null) {
-                this.accessToken = responseJson.getAccessToken();
-                break;
+            if (authJson.getAccessToken() != null) {
+                return authJson.getAccessToken();
             }
 
             Thread.sleep(interval * 1000);
         }
     }
 
-    private void authXBL() throws IOException, InterruptedException{
-        authUser();
+    private String[] authXBL(String microsoftToken) throws IOException, InterruptedException{
+        contentAndAcceptJson[0] = contentTypeJson;
+        contentAndAcceptJson[1] = acceptJson;
 
         logger.info("Authenticating with XBL");
-        HttpPost httpPost = new HttpPost(XBL_AUTH_URL);
-        httpPost.setHeaders(contentAndAcceptJson);
+        HttpPost authXBLPost = new HttpPost(XBL_AUTH_URL);
+        authXBLPost.setHeaders(contentAndAcceptJson);
 
-        String json = gson.toJson(new XBLAuthJson(this.accessToken, "AuthXBL"));
-        StringEntity stringEntity = new StringEntity(json, ContentType.APPLICATION_JSON);
-        httpPost.setEntity(stringEntity);
+        String authXBLPostJson = gson.toJson(new XBLAuthJson(microsoftToken, "AuthXBL"));
+        StringEntity authXBLStringEntity = new StringEntity(authXBLPostJson, ContentType.APPLICATION_JSON);
+        authXBLPost.setEntity(authXBLStringEntity);
 
-        XBLAuthJson responseJson = parseJsonResponse(httpPost, XBLAuthJson.class);
+        XBLAuthJson authXBLJson = parseJsonResponse(authXBLPost, XBLAuthJson.class);
 
-        this.XBLToken = responseJson.getToken();
-    }
-
-    private void authXSTS() throws IOException, InterruptedException{
-        authXBL();
+        String XBLToken = authXBLJson.getToken();
+        String userHash = authXBLJson.getDisplayClaims().getXui()[0].getUserHash();
 
         logger.info("Authenticating with XSTS");
-        HttpPost httpPost = new HttpPost(XSTS_AUTH_URL);
-        httpPost.setHeaders(contentAndAcceptJson);
+        HttpPost authXSTSPost = new HttpPost(XSTS_AUTH_URL);
+        authXSTSPost.setHeaders(contentAndAcceptJson);
 
-        String json = gson.toJson(new XBLAuthJson(XBLToken, "AuthXSTS"));
-        StringEntity stringEntity = new StringEntity(json, ContentType.APPLICATION_JSON);
-        httpPost.setEntity(stringEntity);
+        String authXSTSPostJson = gson.toJson(new XBLAuthJson(XBLToken, "AuthXSTS"));
+        StringEntity authXSTSStringEntity = new StringEntity(authXSTSPostJson, ContentType.APPLICATION_JSON);
+        authXSTSPost.setEntity(authXSTSStringEntity);
         // This endpoint can respond with a error im just gonna ignore that till its a problem :)
-        XBLAuthJson responseJson = parseJsonResponse(httpPost, XBLAuthJson.class);
+        XBLAuthJson authXSTSJson = parseJsonResponse(authXSTSPost, XBLAuthJson.class);
 
-        this.XSTSToken = responseJson.getToken();
+        String[] XBLAuth = new String[2];
+        XBLAuth[0] = authXSTSJson.getToken();
+        XBLAuth[1] = userHash;
+
+        return XBLAuth;
     }
+
+	private void getMinecraftProfile(String[] XBLAuth) throws IOException, InterruptedException {
+		logger.info("Authenticating with Minecraft");
+		HttpPost httpPost = new HttpPost(AUTH_MINE_URL);
+        
+        String json = gson.toJson(new AuthMinecraft("XBL3.0 x="+XBLAuth[1]+";"+XBLAuth[0]));
+        StringEntity stringEneity = new StringEntity(json, ContentType.APPLICATION_JSON);
+        httpPost.setEntity(stringEneity);
+
+        AuthMinecraft responseJson = parseJsonResponse(httpPost, AuthMinecraft.class);
+        MineAccessToken = responseJson.getAccessToken();
+
+        logger.info("Fetching player information");
+        mineAuthHeader = new BasicHeader(HttpHeaders.AUTHORIZATION, "Bearer " + MineAccessToken);        
+        HttpGet httpGet = new HttpGet(GET_MINE_PROFILE);
+        httpGet.addHeader(mineAuthHeader);
+
+        PlayerProfileJson playerProfileJson = parseJsonResponseGet(httpGet, PlayerProfileJson.class);
+
+	}
 }
