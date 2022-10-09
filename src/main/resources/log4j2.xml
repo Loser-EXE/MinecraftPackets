@@ -8,9 +8,10 @@
     <Loggers>
         <Logger name="com.loserexe.Server" level="info"/>
         <Logger name="com.loserexe.packets.serverbound.Handshake" level="info"/>
-        <Logger name="com.loserexe.packets.serverbound.login.LoginOfflineStart" level="info"/>
+        <Logger name="com.loserexe.packets.serverbound.login.LoginStart" level="debug"/>
         <Logger name="com.loserexe.protocol.ServerList" level="info"/>
-		<Logger name="com.loserexe.protocol.LoginOffline" level="info"/>
+		<Logger name="com.loserexe.protocol.login.LoginOffline" level="info"/>
+		<Logger name="com.loserexe.protocol.login.LoginOnline" level="debug"/>
 		<Logger name="com.loserexe.auth.PlayerAuth" level="info" />
 
         <Root level="info">

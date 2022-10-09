@@ -25,6 +25,7 @@ import com.loserexe.pojo.microsoft.DeviceAuthJson;
 import com.loserexe.pojo.microsoft.UserAuthJson;
 import com.loserexe.pojo.microsoft.XBLAuthJson;
 import com.loserexe.pojo.minecraft.AuthMinecraft;
+import com.loserexe.pojo.minecraft.PlayerCertificatesJson;
 import com.loserexe.pojo.minecraft.PlayerProfileJson;
 
 public class PlayerAuth {
@@ -38,6 +39,7 @@ public class PlayerAuth {
     private final String XSTS_AUTH_URL = "https://xsts.auth.xboxlive.com/xsts/authorize";
 	private final String AUTH_MINE_URL = "https://api.minecraftservices.com/authentication/login_with_xbox";
     private final String GET_MINE_PROFILE = "https://api.minecraftservices.com/minecraft/profile";
+	private final String GET_PLAYER_CERTIF = "https://api.minecraftservices.com/player/certificates";
     private final String SCOPE = "Xboxlive.signin XboxLive.offline_access";
     private final String GRANT_TYPE = "urn:ietf:params:oauth:grant-type:device_code";
     private final String APPLICATION_JSON = "application/json";
@@ -50,14 +52,14 @@ public class PlayerAuth {
     private final Gson gson = new GsonBuilder().disableHtmlEscaping().create();
     private final Logger logger = LogManager.getLogger(this.getClass().getName());
 
-    private String MineAccessToken;
+	private UserAuthJson userAuthJson;
+	private XBLAuthJson xblAuthJson;
+	private PlayerProfileJson playerProfileJson;
 
     public PlayerAuth() throws IOException, InterruptedException{
-        String accessToken = authMicrosoftAccount();
-        String[] XBLAuth = authXBL(accessToken);
-
-        getMinecraftProfile(XBLAuth);
-
+        userAuthJson = authMicrosoftAccount();
+        xblAuthJson = authXBL(userAuthJson.getAccessToken());
+		playerProfileJson = getMinecraftProfile(xblAuthJson);
     }
 
     private <T> T parseJsonResponse(HttpPost httpPost, Class<T> clazz) throws IOException{
@@ -79,7 +81,7 @@ public class PlayerAuth {
         }
     }
 
-    private String authMicrosoftAccount() throws IOException, InterruptedException{
+    private UserAuthJson authMicrosoftAccount() throws IOException, InterruptedException{
         logger.debug("Started Device authorization request");
         HttpPost deviceAuthPost = new HttpPost(DEVICE_AUTH_REQUEST_URL);
         deviceAuthPost.setHeader(applicationUrlencodedHeader);
@@ -115,14 +117,14 @@ public class PlayerAuth {
             }
 
             if (authJson.getAccessToken() != null) {
-                return authJson.getAccessToken();
+                return authJson;
             }
 
             Thread.sleep(interval * 1000);
         }
     }
 
-    private String[] authXBL(String microsoftToken) throws IOException, InterruptedException{
+    private XBLAuthJson authXBL(String microsoftToken) throws IOException, InterruptedException{
         contentAndAcceptJson[0] = contentTypeJson;
         contentAndAcceptJson[1] = acceptJson;
 
@@ -137,7 +139,6 @@ public class PlayerAuth {
         XBLAuthJson authXBLJson = parseJsonResponse(authXBLPost, XBLAuthJson.class);
 
         String XBLToken = authXBLJson.getToken();
-        String userHash = authXBLJson.getDisplayClaims().getXui()[0].getUserHash();
 
         logger.info("Authenticating with XSTS");
         HttpPost authXSTSPost = new HttpPost(XSTS_AUTH_URL);
@@ -149,30 +150,53 @@ public class PlayerAuth {
         // This endpoint can respond with a error im just gonna ignore that till its a problem :)
         XBLAuthJson authXSTSJson = parseJsonResponse(authXSTSPost, XBLAuthJson.class);
 
-        String[] XBLAuth = new String[2];
-        XBLAuth[0] = authXSTSJson.getToken();
-        XBLAuth[1] = userHash;
-
-        return XBLAuth;
+        return authXSTSJson;
     }
 
-	private void getMinecraftProfile(String[] XBLAuth) throws IOException, InterruptedException {
+	private PlayerProfileJson getMinecraftProfile(XBLAuthJson XBLAuth) throws IOException, InterruptedException {
 		logger.info("Authenticating with Minecraft");
 		HttpPost httpPost = new HttpPost(AUTH_MINE_URL);
+
+		String userHash = XBLAuth.getDisplayClaims().getXui()[0].getUserHash();
+		String token = XBLAuth.getToken();
         
-        String json = gson.toJson(new AuthMinecraft("XBL3.0 x="+XBLAuth[1]+";"+XBLAuth[0]));
+		String json = gson.toJson(new AuthMinecraft("XBL3.0 x="+userHash+";"+token));
         StringEntity stringEneity = new StringEntity(json, ContentType.APPLICATION_JSON);
         httpPost.setEntity(stringEneity);
 
         AuthMinecraft responseJson = parseJsonResponse(httpPost, AuthMinecraft.class);
-        MineAccessToken = responseJson.getAccessToken();
+        String mineAccessToken = responseJson.getAccessToken();
 
         logger.info("Fetching player information");
-        mineAuthHeader = new BasicHeader(HttpHeaders.AUTHORIZATION, "Bearer " + MineAccessToken);        
+        mineAuthHeader = new BasicHeader(HttpHeaders.AUTHORIZATION, "Bearer " + mineAccessToken);        
         HttpGet httpGet = new HttpGet(GET_MINE_PROFILE);
         httpGet.addHeader(mineAuthHeader);
 
         PlayerProfileJson playerProfileJson = parseJsonResponseGet(httpGet, PlayerProfileJson.class);
+		return playerProfileJson;
 
+	}
+
+	public PlayerCertificatesJson getPlayerCertificates() throws IOException, InterruptedException {
+		logger.info("Fetching player certificates");
+		HttpPost httpPost = new HttpPost(GET_PLAYER_CERTIF);
+
+		httpPost.addHeader(mineAuthHeader);
+
+		PlayerCertificatesJson playerCertificatesJson = parseJsonResponse(httpPost, PlayerCertificatesJson.class);	
+		return playerCertificatesJson;
+
+	}
+
+	public UserAuthJson getUserAuthJson() {
+		return this.userAuthJson;
+	}
+
+	public XBLAuthJson getXBLAuthJson() {
+		return this.xblAuthJson;
+	}
+
+	public PlayerProfileJson getPlayerProfileJson() {
+		return this.playerProfileJson;
 	}
 }

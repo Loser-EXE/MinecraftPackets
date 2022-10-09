@@ -1,8 +1,8 @@
-package com.loserexe.protocol;
+package com.loserexe.protocol.login;
 
 import com.loserexe.Server;
 import com.loserexe.packets.serverbound.Handshake;
-import com.loserexe.packets.serverbound.login.LoginOfflineStart;
+import com.loserexe.packets.serverbound.login.LoginStart;
 import com.loserexe.utils.VarInt;
 
 import java.io.DataOutputStream;
@@ -30,7 +30,7 @@ public class LoginOffline {
         logger.info("Sent handshakeMessage packet");
 
         logger.info("Creating LoginOffline packet...");
-        byte[] login = LoginOfflineStart.getLoginStartPacket(server.getUsername());
+        byte[] login = LoginStart.getLoginStartPacket(server.getUsername());
         VarInt.write(dataOutputStream, login.length);
         logger.debug("Wrote to dataOutputStream: LoginOffline.length = " + login.length);
         dataOutputStream.write(login);

@@ -9,7 +9,8 @@ import java.net.Socket;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.loserexe.protocol.LoginOffline;
+import com.loserexe.protocol.login.LoginOffline;
+import com.loserexe.protocol.login.LoginOnline;
 import com.loserexe.protocol.ServerList;
 import com.loserexe.utils.Favicon;
 
@@ -66,6 +67,10 @@ public class Server {
         LoginOffline.login(this);
     }
 
+	public void onlineLogin() throws IOException, InterruptedException {
+		LoginOnline.login(this);
+	}
+
     public void closeConnection() throws IOException {
         try {
             this.dataOutputStream.close();
@@ -111,10 +116,6 @@ public class Server {
 
     public int getProtocolVersion() {
         return this.protocolVersion;
-    }
-
-    public Logger getLogger() {
-        return this.logger;
     }
 
     @Override

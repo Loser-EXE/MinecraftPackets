@@ -11,7 +11,7 @@ public class ServerTest {
     
     @Before
     public void connectToServer() throws IOException{
-        this.server = new Server("mc.loserexe.com", "AMongus", 760, 25565);
+        this.server = new Server("localhost", "Nigger", 760, 9876);
     }
 
     @Test
@@ -19,11 +19,17 @@ public class ServerTest {
         this.server.serverListPing(760);
     }
 
-    @Test
-    public void connectPlayer() throws IOException{
+	@Test
+    public void connectOffline() throws IOException{
         this.server.offlineLogin();
         this.server.getInputStream().read();
     }
+
+	@Test
+	public void connectOnline() throws IOException, InterruptedException {
+		this.server.onlineLogin();
+		this.server.getInputStream().read();
+	}
 
     @After
     public void closeConnection() throws IOException{

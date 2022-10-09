@@ -2,11 +2,10 @@ package com.loserexe.utils;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.UUID;
 
 public class MinecraftUUID {
-    public static void writeBytes(DataOutputStream out, UUID uuid) throws IOException {
-        String UUID = uuid.toString().replaceAll("-", "");
+    public static void writeBytes(DataOutputStream out, String uuid) throws IOException {
+        String UUID = uuid.replaceAll("-", "");
         int[] UuidToHex = hexStringToByteArray(UUID);
 
         for (int i : UuidToHex) {
