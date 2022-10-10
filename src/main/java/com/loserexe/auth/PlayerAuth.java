@@ -1,7 +1,12 @@
 package com.loserexe.auth;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Scanner;
 
 import org.apache.http.Header;
 import org.apache.http.HttpHeaders;
@@ -51,15 +56,70 @@ public class PlayerAuth {
     private final CloseableHttpClient httpClient = HttpClients.createDefault();
     private final Gson gson = new GsonBuilder().disableHtmlEscaping().create();
     private final Logger logger = LogManager.getLogger(this.getClass().getName());
+    private final String HOME = System.getProperty("user.home");
+    private final String PATH = HOME + "\\AppData\\local\\mpm";
 
 	private UserAuthJson userAuthJson;
 	private XBLAuthJson xblAuthJson;
 	private PlayerProfileJson playerProfileJson;
 
     public PlayerAuth() throws IOException, InterruptedException{
-        userAuthJson = authMicrosoftAccount();
+        UserAuthJson userAuth = loadCache("userAuth", UserAuthJson.class);
+        userAuthJson = authMicrosoftAccount(userAuth);
+
         xblAuthJson = authXBL(userAuthJson.getAccessToken());
 		playerProfileJson = getMinecraftProfile(xblAuthJson);
+    }
+    
+    public <T> T loadCache(String name, Class<T> clazz) throws FileNotFoundException {
+        try {
+            String data = "";
+            String filePath = PATH + "\\cache\\" + name + ".json";
+            File file = new File(filePath);
+            Scanner fileReader = new Scanner(file); 
+            while (fileReader.hasNextLine()) {
+                data += fileReader.nextLine();
+            }
+            fileReader.close();
+
+            return gson.fromJson(data, clazz); 
+        } catch (Exception e) {
+            logger.warn("Failed to load userAuth");
+            return null;
+        }
+    }
+
+    public void cacheData(String name, String data) throws IOException {
+        String path = PATH + "\\cache";
+        String filePath = path + "\\" + name + ".json";
+
+        try {
+            File directory = new File(path);
+            if (directory.mkdirs()) {
+                logger.info("Created directory: " + directory.getPath());
+            }  
+
+            File file = new File(filePath);
+
+            if (file.createNewFile()) {
+                logger.info("Created file: " + file.getName());
+            } else {
+                logger.warn("Overriding file: " + file.getName());
+                FileWriter fileWriter = new FileWriter(file, false);
+                PrintWriter printWriter = new PrintWriter(fileWriter, false);
+                printWriter.flush();
+                printWriter.close();
+                fileWriter.close();
+            }
+
+            FileWriter fileWriter = new FileWriter(file);
+            fileWriter.write(data);
+            fileWriter.close();
+            logger.info("Successfully wrote to file: " + file.getName());
+
+        } catch (IOException e) {
+            logger.warn(e.getMessage());
+        }
     }
 
     private <T> T parseJsonResponse(HttpPost httpPost, Class<T> clazz) throws IOException{
@@ -81,31 +141,44 @@ public class PlayerAuth {
         }
     }
 
-    private UserAuthJson authMicrosoftAccount() throws IOException, InterruptedException{
-        logger.debug("Started Device authorization request");
-        HttpPost deviceAuthPost = new HttpPost(DEVICE_AUTH_REQUEST_URL);
-        deviceAuthPost.setHeader(applicationUrlencodedHeader);
+    private UserAuthJson authMicrosoftAccount(UserAuthJson userAuth) throws IOException, InterruptedException{
+        // ToDo: Catch Failed refresh token attempt
+        int interval = 0;
+        String deviceCode = "";
+        if (userAuth == null) {
+            logger.debug("Started Device authorization request");
+            HttpPost deviceAuthPost = new HttpPost(DEVICE_AUTH_REQUEST_URL);
+            deviceAuthPost.setHeader(applicationUrlencodedHeader);
 
-        ArrayList<NameValuePair> deviceAuthParams = new ArrayList<>();
-        deviceAuthParams.add(new BasicNameValuePair("client_id", CLIENT_ID));
-        deviceAuthParams.add(new BasicNameValuePair("scope", SCOPE));
-        deviceAuthPost.setEntity(new UrlEncodedFormEntity(deviceAuthParams));
+            ArrayList<NameValuePair> deviceAuthParams = new ArrayList<>();
+            deviceAuthParams.add(new BasicNameValuePair("client_id", CLIENT_ID));
+            deviceAuthParams.add(new BasicNameValuePair("scope", SCOPE));
+            deviceAuthPost.setEntity(new UrlEncodedFormEntity(deviceAuthParams));
 
-        DeviceAuthJson deviceAuthJson = parseJsonResponse(deviceAuthPost, DeviceAuthJson.class);
+            DeviceAuthJson deviceAuthJson = parseJsonResponse(deviceAuthPost, DeviceAuthJson.class);
 
-        String deviceCode = deviceAuthJson.getDeviceCode();
-        int interval = deviceAuthJson.getInterval();
+            deviceCode = deviceAuthJson.getDeviceCode();
+            interval = deviceAuthJson.getInterval();
 
-        System.out.println(deviceAuthJson.getMessage());
+            System.out.println(deviceAuthJson.getMessage());
+        }
 
         logger.info("Authenticating user");
         HttpPost authUserPost = new HttpPost(MICROSOFT_USER_AUTH_URL);
         authUserPost.setHeader(applicationUrlencodedHeader);
 
         ArrayList<NameValuePair> authUserParams = new ArrayList<>();
-        authUserParams.add(new BasicNameValuePair("grant_type", GRANT_TYPE));
         authUserParams.add(new BasicNameValuePair("client_id", CLIENT_ID));
-        authUserParams.add(new BasicNameValuePair("device_code", deviceCode));
+        if (userAuth != null) {
+            logger.info("Refreshing token");
+            authUserParams.add(new BasicNameValuePair("scope", SCOPE));
+            authUserParams.add(new BasicNameValuePair("refresh_token", userAuth.getRefreshToken()));
+            authUserParams.add(new BasicNameValuePair("grant_type", "refresh_token"));
+        } else {
+            logger.info("Obtaning new token");
+            authUserParams.add(new BasicNameValuePair("grant_type", GRANT_TYPE));
+            authUserParams.add(new BasicNameValuePair("device_code", deviceCode));
+        }
         authUserPost.setEntity(new UrlEncodedFormEntity(authUserParams));
 
         while (true) {
@@ -117,6 +190,8 @@ public class PlayerAuth {
             }
 
             if (authJson.getAccessToken() != null) {
+                String data = gson.toJson(authJson);
+                cacheData("userAuth", data);
                 return authJson;
             }
 
