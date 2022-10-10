@@ -59,7 +59,7 @@ public class Server {
         }
     }
 
-    public void serverListPing(int protocolVersion) throws IOException{
+    public void serverListPing() throws IOException{
         this.serverList = new ServerList(this);
     }
 

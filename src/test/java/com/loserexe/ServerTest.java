@@ -16,7 +16,7 @@ public class ServerTest {
 
     @Test
     public void getServerList() throws IOException {
-        this.server.serverListPing(760);
+        this.server.serverListPing();
     }
 
 	@Test
