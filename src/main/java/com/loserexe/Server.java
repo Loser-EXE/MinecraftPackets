@@ -10,8 +10,7 @@ import java.security.NoSuchAlgorithmException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.loserexe.protocol.login.LoginOffline;
-import com.loserexe.protocol.login.LoginOnline;
+import com.loserexe.protocol.Login;
 import com.loserexe.protocol.ServerList;
 import com.loserexe.utils.Favicon;
 
@@ -55,7 +54,6 @@ public class Server {
             this.dataInputStream = new DataInputStream(socket.getInputStream());
         } catch(Exception e) {
             logger.fatal("Failed to connect to server: " + e.getMessage(), e);
-            closeConnection();
             throw e;
         }
     }
@@ -64,12 +62,12 @@ public class Server {
         this.serverList = new ServerList(this);
     }
 
-    public void offlineLogin() throws IOException{
-        LoginOffline.login(this);
-    }
-
-	public void onlineLogin() throws IOException, InterruptedException, NoSuchAlgorithmException {
-		LoginOnline.login(this);
+	public void login(boolean isOnline) throws IOException, InterruptedException, NoSuchAlgorithmException {
+        if (isOnline) {
+            Login.LoginOnline(this);
+        } else {
+            Login.LoginOffline(this);
+        }
 	}
 
     public void closeConnection() throws IOException {

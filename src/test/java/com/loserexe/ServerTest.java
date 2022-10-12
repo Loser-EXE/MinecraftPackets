@@ -12,7 +12,7 @@ public class ServerTest {
     
     @Before
     public void connectToServer() throws IOException{
-        this.server = new Server("localhost", "Nigger", 760, 9876);
+        this.server = new Server("localhost", "LoserEXE", 760, 9876);
     }
 
     @Test
@@ -21,15 +21,13 @@ public class ServerTest {
     }
 
 	@Test
-    public void connectOffline() throws IOException{
-        this.server.offlineLogin();
-        this.server.getInputStream().read();
+    public void connect() throws IOException{
+        try {
+            this.server.login(true);    
+        } catch(Exception e) { 
+            System.out.println(e.getMessage());
+        } 
     }
-
-	@Test
-	public void connectOnline() throws IOException, InterruptedException, NoSuchAlgorithmException {
-		this.server.onlineLogin();
-	}
 
     @After
     public void closeConnection() throws IOException{
