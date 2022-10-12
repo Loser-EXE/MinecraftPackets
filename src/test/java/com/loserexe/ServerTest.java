@@ -1,6 +1,7 @@
 package com.loserexe;
 
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 
 import org.junit.After;
 import org.junit.Before;
@@ -26,9 +27,8 @@ public class ServerTest {
     }
 
 	@Test
-	public void connectOnline() throws IOException, InterruptedException {
+	public void connectOnline() throws IOException, InterruptedException, NoSuchAlgorithmException {
 		this.server.onlineLogin();
-		this.server.getInputStream().read();
 	}
 
     @After

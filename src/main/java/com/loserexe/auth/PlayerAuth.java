@@ -8,9 +8,12 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Scanner;
 
+import javax.swing.text.AbstractDocument.Content;
+
 import org.apache.http.Header;
 import org.apache.http.HttpHeaders;
 import org.apache.http.NameValuePair;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -30,6 +33,7 @@ import com.loserexe.pojo.microsoft.DeviceAuthJson;
 import com.loserexe.pojo.microsoft.UserAuthJson;
 import com.loserexe.pojo.microsoft.XBLAuthJson;
 import com.loserexe.pojo.minecraft.AuthMinecraft;
+import com.loserexe.pojo.minecraft.ClientAuthJson;
 import com.loserexe.pojo.minecraft.PlayerCertificatesJson;
 import com.loserexe.pojo.minecraft.PlayerProfileJson;
 
@@ -45,6 +49,7 @@ public class PlayerAuth {
 	private final String AUTH_MINE_URL = "https://api.minecraftservices.com/authentication/login_with_xbox";
     private final String GET_MINE_PROFILE = "https://api.minecraftservices.com/minecraft/profile";
 	private final String GET_PLAYER_CERTIF = "https://api.minecraftservices.com/player/certificates";
+    private final String AUTH_CLIENT = "https://sessionserver.mojang.com/session/minecraft/join";
     private final String SCOPE = "Xboxlive.signin XboxLive.offline_access";
     private final String GRANT_TYPE = "urn:ietf:params:oauth:grant-type:device_code";
     private final String APPLICATION_JSON = "application/json";
@@ -58,6 +63,7 @@ public class PlayerAuth {
     private final Logger logger = LogManager.getLogger(this.getClass().getName());
     private final String HOME = System.getProperty("user.home");
     private final String PATH = HOME + "\\AppData\\local\\mpm";
+    private String mineAccessToken;
 
 	private UserAuthJson userAuthJson;
 	private XBLAuthJson xblAuthJson;
@@ -240,7 +246,7 @@ public class PlayerAuth {
         httpPost.setEntity(stringEneity);
 
         AuthMinecraft responseJson = parseJsonResponse(httpPost, AuthMinecraft.class);
-        String mineAccessToken = responseJson.getAccessToken();
+        mineAccessToken = responseJson.getAccessToken();
 
         logger.info("Fetching player information");
         mineAuthHeader = new BasicHeader(HttpHeaders.AUTHORIZATION, "Bearer " + mineAccessToken);        
@@ -262,6 +268,27 @@ public class PlayerAuth {
 		return playerCertificatesJson;
 
 	}
+
+    public void authClient(String hash) throws ClientProtocolException, IOException {
+        logger.info("Authenticating client");
+        HttpPost httpPost = new HttpPost(AUTH_CLIENT);
+        httpPost.addHeader(contentTypeJson);
+
+        ClientAuthJson clientAuthJson = new ClientAuthJson(mineAccessToken, playerProfileJson.getUuid().replace("-", ""), hash);
+        String json = gson.toJson(clientAuthJson);
+        httpPost.setEntity(new StringEntity(json, ContentType.APPLICATION_JSON));
+        
+        CloseableHttpResponse response = httpClient.execute(httpPost);
+
+        if(response.getStatusLine().getStatusCode() == 204) {
+            logger.info("Successfully authenticated client");
+            return;
+        }
+        
+        byte[] responseBytes = response.getEntity().getContent().readAllBytes();
+        ClientAuthJson clientAuth = gson.fromJson(new String(responseBytes), ClientAuthJson.class);
+        throw new IOException(clientAuth.getError());
+    }
 
 	public UserAuthJson getUserAuthJson() {
 		return this.userAuthJson;

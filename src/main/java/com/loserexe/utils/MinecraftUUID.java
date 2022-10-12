@@ -13,7 +13,7 @@ public class MinecraftUUID {
         }
     }
 
-    public static int[] hexStringToByteArray(String hexString) {
+    private static int[] hexStringToByteArray(String hexString) {
         int len = hexString.length();
         int[] data = new int[len/2];
         for (int i = 0; i < len; i+=2) {
